@@ -1,11 +1,5 @@
 
 //
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -17,18 +11,25 @@ import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.ActionEvent;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import org.jnativehook.NativeHookException;
 
 public class SoundMuteApp {
 
-    public static void GUIwindow() {
+    public static void GUIwindow() throws NativeHookException {
 
         // ------------------------------------------------------------------ \\
         // ---------------------------- GUI BODY ---------------------------- \\
@@ -72,7 +73,7 @@ public class SoundMuteApp {
         borderPanel.add(gridPanel, BorderLayout.CENTER);
 
         // ------------------------------------------------------------------ \\
-        // ----------------------- MOUSE INTERACTIONS ----------------------- \\
+        // ----------------------- BUTTON INTERACTIONS ---------------------- \\
         // ------------------------------------------------------------------ \\
 
         // Create buttons
@@ -133,6 +134,10 @@ public class SoundMuteApp {
         // Add the border panel to the frame
         frame.add(borderPanel);
         frame.setVisible(true);
+
+        // ------------------------------------------------- \\
+        // ----------------- HOTKEY DETECT ----------------- \\
+        // ------------------------------------------------- \\
 
         // ------------------------------------------------- \\
         // ------------------- TRAY ZONE ------------------- \\
@@ -234,6 +239,11 @@ public class SoundMuteApp {
     }
 
     public static void main(String[] args) {
-        GUIwindow();
+        try {
+            GUIwindow();
+        } catch (NativeHookException e) {
+            System.out.println("Error installing native hook: " + e.getMessage());
+            System.out.println("!-------------------!");
+        }
     }
 }
