@@ -27,6 +27,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import org.jnativehook.NativeHookException;
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.GlobalScreen;
 
 public class SoundMuteApp {
@@ -101,9 +103,65 @@ public class SoundMuteApp {
                 // Code for Capture button action
                 Logger.log("Capture button clicked!");
                 Logger.log("!-------------------!");
+
+                // record new hotkey and write it in file hotkey.inf
+                // update label, hotkey should be key1 + key2
+
+                // start timer to record hotkey
+                Timer timer = new Timer(2400, e1 -> {
+                    // stop native hook
+                    try {
+                        GlobalScreen.unregisterNativeHook();
+                    } catch (NativeHookException ex) {
+                        Logger.log("Error unregistering native hook: " + ex);
+                    }
+                });
+                timer.setRepeats(false);
+                timer.start();
+
+                // start native hook to record hotkey
+                try {
+                    GlobalScreen.registerNativeHook();
+                } catch (NativeHookException ex) {
+                    Logger.log("Error registering native hook: " + ex);
+                }
+                GlobalScreen.addNativeKeyListener(new NativeKeyListener() {
+                    private String hotkey = "";
+                    private int key1 = 0;
+                    private int key2 = 0;
+
+                    @Override
+                    public void nativeKeyPressed(NativeKeyEvent e) {
+                        if (key1 == 0) {
+                            key1 = e.getKeyCode();
+                        } else if (key2 == 0) {
+                            key2 = e.getKeyCode();
+                            hotkey = NativeKeyEvent.getKeyText(key1) + " + "
+                                    + NativeKeyEvent.getKeyText(key2);
+                            writeFile("hotkey.inf", hotkey);
+                            currentHotkeyLabel.setText("Current Hotkey: " + hotkey);
+                            try {
+                                GlobalScreen.unregisterNativeHook();
+                            } catch (NativeHookException ex) {
+                                Logger.log("Error unregistering native hook: " + ex);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void nativeKeyReleased(NativeKeyEvent e) {
+                        // ignore
+                    }
+
+                    @Override
+                    public void nativeKeyTyped(NativeKeyEvent e) {
+                        // ignore
+                    }
+                });
             }
         });
 
+        // Delay trigger button logic
         JButton DelayHtkBTN = new JButton("Trigger hotkey with 5s delay");
         DelayHtkBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -113,6 +171,7 @@ public class SoundMuteApp {
             }
         });
 
+        // Move to tray button logic
         JButton MoveToTrayBTN = new JButton("Move program to tray");
         MoveToTrayBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -122,6 +181,7 @@ public class SoundMuteApp {
             }
         });
 
+        // Clear button logic
         JButton ClearHtkBTN = new JButton("Clear hotkey");
         ClearHtkBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -282,11 +342,11 @@ public class SoundMuteApp {
             Scanner scanner = new Scanner(file);
             if (scanner.hasNextLine()) {
                 String contents = scanner.nextLine();
-
-                // TODO check for valid hotkey
-
                 Logger.log("!File found, reading line!");
                 Logger.log("!-------------!");
+
+                // TODO scan hotkey.inf file for valid
+
                 scanner.close();
                 return contents;
             } else {
@@ -319,6 +379,7 @@ public class SoundMuteApp {
         }
     }
 
+    // Main body
     public static void main(String[] args) {
         try {
             System.setProperty("org.jnativehook.logging.level", "OFF");
@@ -334,7 +395,6 @@ public class SoundMuteApp {
             e.printStackTrace();
             Logger.log(null);
         }
-
         GlobalScreen.addNativeKeyListener(new GlobalKeyLogger());
     }
 }
