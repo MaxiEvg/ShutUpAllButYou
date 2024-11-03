@@ -103,7 +103,11 @@ public class SoundMuteApp implements NativeKeyListener {
         frame.setSize(450, 150); // Setting standart window sise
         frame.setMinimumSize(new Dimension(450, 120)); // Set minimum size
         frame.setVisible(true); // Set visibility
-
+        // Center the window on the screen
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int x = (screenSize.width - frame.getWidth()) / 2;
+        int y = (screenSize.height - frame.getHeight()) / 2 - 120;
+        frame.setLocation(x, y);
         // buttons: hotkey capture, trigger hotkey with delay, move program to tray,
         // clear hotkey
 
