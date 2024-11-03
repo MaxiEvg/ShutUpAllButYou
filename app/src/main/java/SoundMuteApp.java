@@ -18,75 +18,23 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
-import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
-import org.jnativehook.keyboard.NativeKeyEvent;
-import org.jnativehook.keyboard.NativeKeyListener;
 
-public class SoundMuteApp implements NativeKeyListener {
+public class SoundMuteApp {
 
     // ------------------------------------------------- \\
     // ----------------- HOTKEY DETECT ----------------- \\
     // --------------------- begin --------------------- \\
 
-    // TODO NOT YET READY TO USE
-    private Set<String> hotkeySet = new HashSet<>();
-    private Set<String> pressedKeys = new HashSet<>();
-
-    // TODO NOT YET READY TO USE
-    public SoundMuteApp() throws NativeHookException {
-        GlobalScreen.registerNativeHook();
-        GlobalScreen.addNativeKeyListener(this);
-
-        // Read the hotkey configuration from the hotkey.in`f file
-        File hotkeyFile = new File("hotkey.inf");
-        try {
-            Scanner scanner = new Scanner(hotkeyFile);
-            String hotkey = scanner.nextLine();
-            String[] hotkeyArray = hotkey.split("\\+");
-            for (String key : hotkeyArray) {
-                hotkeySet.add(key.trim());
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Hotkey file not found.");
-        }
-    }
-
-    // TODO NOT YET READY TO USE
-    @Override
-    public void nativeKeyPressed(NativeKeyEvent e) {
-        String key = NativeKeyEvent.getKeyText(e.getKeyCode());
-        pressedKeys.add(key);
-
-        // Check if all hotkey keys are pressed
-        if (hotkeySet.equals(pressedKeys)) {
-            triggerHotkey();
-            pressedKeys.clear();
-        }
-    }
-
-    // TODO NOT YET READY TO USE
-    @Override
-    public void nativeKeyReleased(NativeKeyEvent e) {
-        String key = NativeKeyEvent.getKeyText(e.getKeyCode());
-        pressedKeys.remove(key);
-    }
-
-    // TODO NOT YET READY TO USE
-    @Override
-    public void nativeKeyTyped(NativeKeyEvent e) {
-        // Not used
-    }
+    // TODO scan all pressed keys
 
     // ------------------------------------------------- \\
     // ----------------- HOTKEY DETECT ----------------- \\
@@ -106,7 +54,7 @@ public class SoundMuteApp implements NativeKeyListener {
         // Center the window on the screen
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int x = (screenSize.width - frame.getWidth()) / 2;
-        int y = (screenSize.height - frame.getHeight()) / 2 - 120;
+        int y = (screenSize.height - frame.getHeight()) / 2 - 100;
         frame.setLocation(x, y);
         // buttons: hotkey capture, trigger hotkey with delay, move program to tray,
         // clear hotkey
@@ -114,11 +62,15 @@ public class SoundMuteApp implements NativeKeyListener {
         // Create a panel with a BorderLayout
         JPanel borderPanel = new JPanel(new BorderLayout());
 
+        // ------------------------------------------------------------------ \\
+        // ---------------------------- FILE WORK --------------------------- \\
+        // ------------------------------------------------------------------ \\
+
         // Read the current hotkey from the file
         String currentHotkey = readFile("hotkey.inf");
 
         // If file is not found, create a new file and set default hotkey
-        if (currentHotkey.isEmpty()) {
+        if (currentHotkey.isBlank()) {
             currentHotkey = "Right Ctrl + Left Ctrl";
             writeFile("hotkey.inf", currentHotkey);
         }
@@ -195,12 +147,25 @@ public class SoundMuteApp implements NativeKeyListener {
             System.out.println("Delay button triggered!");
             System.out.println("!-------------------!");
             // Trigger the hotkey with a 5-second delay
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-            triggerHotkey();
+            Timer timer = new Timer(1000, new ActionListener() {
+                int seconds = 5;
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (seconds > 0) {
+                        seconds--;
+                        SwingUtilities
+                                .invokeLater(() -> DelayHtkBTN.setText("Waiting " + seconds + "s"));
+                    } else {
+                        triggerHotkey();
+                        SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 5s delay"));
+                        ((Timer) e.getSource()).stop();
+                    }
+                }
+            });
+            timer.setRepeats(true);
+            timer.start();
+            SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 5s"));
         });
 
         // Add buttons to the grid panel
@@ -285,15 +250,37 @@ public class SoundMuteApp implements NativeKeyListener {
     public static String readFile(String filename) {
         try {
             File file = new File(filename);
+            if (!file.exists()) {
+                System.out.println("File not found! Created new hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                System.out.println("!-------------------!");
+                return "";
+            }
             Scanner scanner = new Scanner(file);
-            String contents = scanner.nextLine();
-            scanner.close();
-            return contents;
+            if (scanner.hasNextLine()) {
+                String contents = scanner.nextLine();
+
+                // TODO check for valid hotkey
+
+                System.out.println("!File found, reading line!");
+                System.out.println("!-------------!");
+                scanner.close();
+                return contents;
+            } else {
+                System.out.println("!------WARN-------!");
+                System.out.println("!!!FOUND FILE, BUT IT SEEMS EMPTY OR BROKEN!!!");
+                System.out.println("Overwriten hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                System.out.println("!-------------!");
+                scanner.close();
+                return "";
+            }
         } catch (FileNotFoundException e) {
-            System.out.println("File not found! Created new hotkey.inf with defalut of right 'ctrl + left ctrl'");
+            System.out.println("Error: " + e.getMessage());
             System.out.println("!-------------------!");
-            return "";
+        } catch (NullPointerException e) {
+            System.out.println("Error: " + e.getMessage());
+            System.out.println("!-------------------!");
         }
+        return "";
     }
 
     // write file method
