@@ -345,8 +345,6 @@ public class SoundMuteApp {
                 Logger.log("!File found, reading line!");
                 Logger.log("!-------------!");
 
-                // TODO scan hotkey.inf file for valid
-
                 scanner.close();
                 return contents;
             } else {

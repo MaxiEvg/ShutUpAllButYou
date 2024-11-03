@@ -4,20 +4,8 @@ import org.jnativehook.keyboard.NativeKeyEvent;
 
 public class KeyValues {
 
-    /** The Constant serialVersionUID. */
-    private static final long serialVersionUID = 8608981443834617646L;
-
-    /** The raw native key code. */
-    private int rawCode;
-
     /** The virtual key code. */
     private int keyCode;
-
-    /** The Unicode character. */
-    private char keyChar;
-
-    /** The virtual key location. */
-    private int keyLocation;
 
     /** The first number in the range of ID's used for native key events. */
     public static final int NATIVE_KEY_FIRST = 2400;
