@@ -18,16 +18,79 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import org.jnativehook.NativeHookException;
 
-public class SoundMuteApp {
+import org.jnativehook.GlobalScreen;
+import org.jnativehook.NativeHookException;
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
+
+public class SoundMuteApp implements NativeKeyListener {
+
+    // ------------------------------------------------- \\
+    // ----------------- HOTKEY DETECT ----------------- \\
+    // --------------------- begin --------------------- \\
+
+    // TODO NOT YET READY TO USE
+    private Set<String> hotkeySet = new HashSet<>();
+    private Set<String> pressedKeys = new HashSet<>();
+
+    // TODO NOT YET READY TO USE
+    public SoundMuteApp() throws NativeHookException {
+        GlobalScreen.registerNativeHook();
+        GlobalScreen.addNativeKeyListener(this);
+
+        // Read the hotkey configuration from the hotkey.in`f file
+        File hotkeyFile = new File("hotkey.inf");
+        try {
+            Scanner scanner = new Scanner(hotkeyFile);
+            String hotkey = scanner.nextLine();
+            String[] hotkeyArray = hotkey.split("\\+");
+            for (String key : hotkeyArray) {
+                hotkeySet.add(key.trim());
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Hotkey file not found.");
+        }
+    }
+
+    // TODO NOT YET READY TO USE
+    @Override
+    public void nativeKeyPressed(NativeKeyEvent e) {
+        String key = NativeKeyEvent.getKeyText(e.getKeyCode());
+        pressedKeys.add(key);
+
+        // Check if all hotkey keys are pressed
+        if (hotkeySet.equals(pressedKeys)) {
+            triggerHotkey();
+            pressedKeys.clear();
+        }
+    }
+
+    // TODO NOT YET READY TO USE
+    @Override
+    public void nativeKeyReleased(NativeKeyEvent e) {
+        String key = NativeKeyEvent.getKeyText(e.getKeyCode());
+        pressedKeys.remove(key);
+    }
+
+    // TODO NOT YET READY TO USE
+    @Override
+    public void nativeKeyTyped(NativeKeyEvent e) {
+        // Not used
+    }
+
+    // ------------------------------------------------- \\
+    // ----------------- HOTKEY DETECT ----------------- \\
+    // ---------------------- end ---------------------- \\
 
     public static void GUIwindow() throws NativeHookException {
 
@@ -90,7 +153,7 @@ public class SoundMuteApp {
         DelayHtkBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Code for Delay button action
-                System.out.println("Delay button clicked!");
+                System.out.println(" ^ with Delay button clicked!");
                 System.out.println("!-------------------!");
             }
         });
@@ -122,6 +185,20 @@ public class SoundMuteApp {
             }
         });
 
+        // Add a listener to the "Trigger hotkey with 5s delay" button
+        DelayHtkBTN.addActionListener(e -> {
+            // Code for Delay button action
+            System.out.println("Delay button triggered!");
+            System.out.println("!-------------------!");
+            // Trigger the hotkey with a 5-second delay
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+            triggerHotkey();
+        });
+
         // Add buttons to the grid panel
         gridPanel.add(CaptureBTN);
         gridPanel.add(DelayHtkBTN);
@@ -134,10 +211,6 @@ public class SoundMuteApp {
         // Add the border panel to the frame
         frame.add(borderPanel);
         frame.setVisible(true);
-
-        // ------------------------------------------------- \\
-        // ----------------- HOTKEY DETECT ----------------- \\
-        // ------------------------------------------------- \\
 
         // ------------------------------------------------- \\
         // ------------------- TRAY ZONE ------------------- \\
@@ -157,7 +230,14 @@ public class SoundMuteApp {
             frame.setVisible(true);
             frame.toFront();
         });
+        MenuItem exitItem = new MenuItem("Exit");
+        exitItem.addActionListener(e -> {
+            // Exit the program
+            System.out.println("! Closing program with tray popup option !");
+            System.exit(0);
+        });
         popup.add(showItem);
+        popup.add(exitItem);
         trayIcon.setPopupMenu(popup);
 
         // Add a listener to handle left-double-click and right-single-click events
@@ -186,20 +266,6 @@ public class SoundMuteApp {
             frame.setVisible(false);
             trayIcon.displayMessage("Sound Mute App", "The program has been moved to the system tray.",
                     TrayIcon.MessageType.INFO);
-        });
-
-        // Add a listener to the "Trigger hotkey with 5s delay" button
-        DelayHtkBTN.addActionListener(e -> {
-            // Code for Delay button action
-            System.out.println("Delay button clicked!");
-            System.out.println("!-------------------!");
-            // Trigger the hotkey with a 5-second delay
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-            triggerHotkey();
         });
 
     }
