@@ -6,13 +6,6 @@
             "request": "launch",
             "mainClass": "SoundMuteApp",
             "projectName": "app"
-        },
-        {
-            "type": "java",
-            "request": "attach",
-            "name": "Java",
-            "port": 5005,
-            "sourceRoots": []
         }
     ]
 }

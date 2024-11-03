@@ -13,6 +13,7 @@ import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import java.awt.event.MouseAdapter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,15 +33,6 @@ import org.jnativehook.keyboard.NativeKeyListener;
 import org.jnativehook.GlobalScreen;
 
 public class SoundMuteApp {
-
-    // ------------------------------------------------- \\
-    // ----------------- HOTKEY DETECT ----------------- \\
-    // --------------------- begin --------------------- \\
-
-    // ------------------------------------------------- \\
-    // ----------------- HOTKEY DETECT ----------------- \\
-    // ---------------------- end ---------------------- \\
-
     public static void GUIwindow() throws NativeHookException {
 
         // ------------------------------------------------------------------ \\
@@ -127,8 +119,8 @@ public class SoundMuteApp {
                 }
                 GlobalScreen.addNativeKeyListener(new NativeKeyListener() {
                     private String hotkey = "";
-                    private int key1 = 0;
-                    private int key2 = 0;
+                    public int key1 = 0;
+                    public int key2 = 0;
 
                     @Override
                     public void nativeKeyPressed(NativeKeyEvent e) {
@@ -248,7 +240,7 @@ public class SoundMuteApp {
         SystemTray tray = SystemTray.getSystemTray();
 
         // Create a tray icon
-        Image image = Toolkit.getDefaultToolkit().getImage("SUABY.png"); // Replace with your icon path
+        Image image = Toolkit.getDefaultToolkit().getImage("SUABY.png");
         TrayIcon trayIcon = new TrayIcon(image, "Sound Mute App");
 
         // Create a popup menu for the tray icon
@@ -377,22 +369,16 @@ public class SoundMuteApp {
         }
     }
 
+    // get keys from file with splitting with " + ", then while program is running
+    // check if every key is pressed, if it does, trigger the
+    // hotkey
+
     // Main body
     public static void main(String[] args) {
         try {
-            System.setProperty("org.jnativehook.logging.level", "OFF");
-            GlobalScreen.registerNativeHook();
             GUIwindow();
         } catch (NativeHookException e) {
             Logger.log("Error installing native hook: " + e.getMessage());
-            Logger.log("!-------------------!");
         }
-        try {
-            GlobalScreen.registerNativeHook();
-        } catch (NativeHookException e) {
-            e.printStackTrace();
-            Logger.log(null);
-        }
-        GlobalScreen.addNativeKeyListener(new GlobalKeyLogger());
     }
 }
