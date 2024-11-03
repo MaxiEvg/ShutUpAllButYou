@@ -27,14 +27,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import org.jnativehook.NativeHookException;
+import org.jnativehook.GlobalScreen;
 
 public class SoundMuteApp {
 
     // ------------------------------------------------- \\
     // ----------------- HOTKEY DETECT ----------------- \\
     // --------------------- begin --------------------- \\
-
-    // TODO scan all pressed keys
 
     // ------------------------------------------------- \\
     // ----------------- HOTKEY DETECT ----------------- \\
@@ -71,7 +70,7 @@ public class SoundMuteApp {
 
         // If file is not found, create a new file and set default hotkey
         if (currentHotkey.isBlank()) {
-            currentHotkey = "Right Ctrl + Left Ctrl";
+            currentHotkey = "Ctrl + Back Slash";
             writeFile("hotkey.inf", currentHotkey);
         }
 
@@ -276,7 +275,7 @@ public class SoundMuteApp {
         try {
             File file = new File(filename);
             if (!file.exists()) {
-                Logger.log("File not found! Created new hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                Logger.log("File not found! Created new hotkey.inf with defalut of c'Ctrl + Back Slash'");
                 Logger.log("!-------------------!");
                 return "";
             }
@@ -292,8 +291,8 @@ public class SoundMuteApp {
                 return contents;
             } else {
                 Logger.log("!------WARN-------!");
-                Logger.log("!!!FOUND FILE, BUT IT SEEMS EMPTY OR BROKEN!!!");
-                Logger.log("Overwriten hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                Logger.log("!!!FOUND FILE, BUT IT SEEMS EMPTY!!!");
+                Logger.log("Overwriten hotkey.inf with defalut of 'Ctrl + Back Slash' ");
                 Logger.log("!-------------!");
                 scanner.close();
                 return "";
@@ -322,10 +321,20 @@ public class SoundMuteApp {
 
     public static void main(String[] args) {
         try {
+            System.setProperty("org.jnativehook.logging.level", "OFF");
+            GlobalScreen.registerNativeHook();
             GUIwindow();
         } catch (NativeHookException e) {
             Logger.log("Error installing native hook: " + e.getMessage());
             Logger.log("!-------------------!");
         }
+        try {
+            GlobalScreen.registerNativeHook();
+        } catch (NativeHookException e) {
+            e.printStackTrace();
+            Logger.log(null);
+        }
+
+        GlobalScreen.addNativeKeyListener(new GlobalKeyLogger());
     }
 }
