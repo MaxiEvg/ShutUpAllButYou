@@ -100,8 +100,8 @@ public class SoundMuteApp {
         CaptureBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Code for Capture button action
-                System.out.println("Capture button clicked!");
-                System.out.println("!-------------------!");
+                Logger.log("Capture button clicked!");
+                Logger.log("!-------------------!");
             }
         });
 
@@ -109,8 +109,8 @@ public class SoundMuteApp {
         DelayHtkBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Code for Delay button action
-                System.out.println(" ^ with Delay button clicked!");
-                System.out.println("!-------------------!");
+                Logger.log(" ^ with Delay button clicked!");
+                Logger.log("!-------------------!");
             }
         });
 
@@ -118,8 +118,8 @@ public class SoundMuteApp {
         MoveToTrayBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Code for Move to Tray button action
-                System.out.println("Move to Tray button clicked!");
-                System.out.println("!-------------------!");
+                Logger.log("Move to Tray button clicked!");
+                Logger.log("!-------------------!");
             }
         });
 
@@ -130,12 +130,12 @@ public class SoundMuteApp {
                 File file = new File("hotkey.inf");
                 if (file.exists()) {
                     if (file.delete()) {
-                        System.out.println("Hotkey file deleted!");
+                        Logger.log("Hotkey file deleted!");
                         currentHotkeyLabel.setText("Current Hotkey: None");
-                        System.out.println("!-------------------!");
+                        Logger.log("!-------------------!");
                     } else {
-                        System.out.println("Failed to delete the file");
-                        System.out.println("!-------------------!");
+                        Logger.log("Failed to delete the file");
+                        Logger.log("!-------------------!");
                     }
                 }
             }
@@ -144,8 +144,8 @@ public class SoundMuteApp {
         // Add a listener to the "Trigger hotkey with 5s delay" button
         DelayHtkBTN.addActionListener(e -> {
             // Code for Delay button action
-            System.out.println("Delay button triggered!");
-            System.out.println("!-------------------!");
+            Logger.log("Delay button triggered!");
+            Logger.log("!-------------------!");
             // Trigger the hotkey with a 5-second delay
             Timer timer = new Timer(1000, new ActionListener() {
                 int seconds = 5;
@@ -202,7 +202,7 @@ public class SoundMuteApp {
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> {
             // Exit the program
-            System.out.println("! Closing program with tray popup option !");
+            Logger.log("! Closing program with tray popup option !");
             System.exit(0);
         });
         popup.add(showItem);
@@ -217,7 +217,32 @@ public class SoundMuteApp {
                     frame.setVisible(true);
                     frame.toFront();
                 } else if (e.getClickCount() == 1 && SwingUtilities.isRightMouseButton(e)) {
-                    frame.setVisible(true);
+                    frame.setVisible(false);
+                } else if (e.getClickCount() == 1 && SwingUtilities.isMiddleMouseButton(e)) {
+                    // Log
+                    Logger.log("Delay button triggered with mouse wheel button from tray!");
+                    Logger.log("!-------------------!");
+
+                    // Trigger the hotkey with a 5-second delay
+                    Timer timer = new Timer(1000, new ActionListener() {
+                        int seconds = 5;
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (seconds > 0) {
+                                seconds--;
+                                SwingUtilities
+                                        .invokeLater(() -> DelayHtkBTN.setText("Waiting " + seconds + "s"));
+                            } else {
+                                triggerHotkey();
+                                SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 5s delay"));
+                                ((Timer) e.getSource()).stop();
+                            }
+                        }
+                    });
+                    timer.setRepeats(true);
+                    timer.start();
+                    SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 5s"));
                 }
             }
         });
@@ -226,8 +251,8 @@ public class SoundMuteApp {
         try {
             tray.add(trayIcon);
         } catch (AWTException e) {
-            System.out.println("TrayIcon could not be added.");
-            System.out.println("!-------------------!");
+            Logger.log("TrayIcon could not be added.");
+            Logger.log("!-------------------!");
         }
 
         // Add a listener to the "Move program to tray" button
@@ -242,8 +267,8 @@ public class SoundMuteApp {
     // Method to trigger the hotkey
     public static void triggerHotkey() {
         // Code to trigger the hotkey
-        System.out.println("Hotkey triggered!");
-        System.out.println("!-------------------!");
+        Logger.log("Hotkey triggered!");
+        Logger.log("!-------------------!");
     }
 
     // Method to read the contents of a file
@@ -251,8 +276,8 @@ public class SoundMuteApp {
         try {
             File file = new File(filename);
             if (!file.exists()) {
-                System.out.println("File not found! Created new hotkey.inf with defalut of 'right ctrl + left ctrl'");
-                System.out.println("!-------------------!");
+                Logger.log("File not found! Created new hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                Logger.log("!-------------------!");
                 return "";
             }
             Scanner scanner = new Scanner(file);
@@ -261,24 +286,24 @@ public class SoundMuteApp {
 
                 // TODO check for valid hotkey
 
-                System.out.println("!File found, reading line!");
-                System.out.println("!-------------!");
+                Logger.log("!File found, reading line!");
+                Logger.log("!-------------!");
                 scanner.close();
                 return contents;
             } else {
-                System.out.println("!------WARN-------!");
-                System.out.println("!!!FOUND FILE, BUT IT SEEMS EMPTY OR BROKEN!!!");
-                System.out.println("Overwriten hotkey.inf with defalut of 'right ctrl + left ctrl'");
-                System.out.println("!-------------!");
+                Logger.log("!------WARN-------!");
+                Logger.log("!!!FOUND FILE, BUT IT SEEMS EMPTY OR BROKEN!!!");
+                Logger.log("Overwriten hotkey.inf with defalut of 'right ctrl + left ctrl'");
+                Logger.log("!-------------!");
                 scanner.close();
                 return "";
             }
         } catch (FileNotFoundException e) {
-            System.out.println("Error: " + e.getMessage());
-            System.out.println("!-------------------!");
+            Logger.log("Error: " + e.getMessage());
+            Logger.log("!-------------------!");
         } catch (NullPointerException e) {
-            System.out.println("Error: " + e.getMessage());
-            System.out.println("!-------------------!");
+            Logger.log("Error: " + e.getMessage());
+            Logger.log("!-------------------!");
         }
         return "";
     }
@@ -290,8 +315,8 @@ public class SoundMuteApp {
             writer.write(contents);
             writer.close();
         } catch (IOException e) {
-            System.out.println("Error writing to file!");
-            System.out.println("!-------------------!");
+            Logger.log("Error writing to file!");
+            Logger.log("!-------------------!");
         }
     }
 
@@ -299,8 +324,8 @@ public class SoundMuteApp {
         try {
             GUIwindow();
         } catch (NativeHookException e) {
-            System.out.println("Error installing native hook: " + e.getMessage());
-            System.out.println("!-------------------!");
+            Logger.log("Error installing native hook: " + e.getMessage());
+            Logger.log("!-------------------!");
         }
     }
 }
