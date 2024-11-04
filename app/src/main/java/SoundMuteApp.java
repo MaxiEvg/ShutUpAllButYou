@@ -15,10 +15,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import java.awt.event.MouseAdapter;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -322,6 +326,47 @@ public class SoundMuteApp {
         // Code to trigger the hotkey
         Logger.log("Hotkey triggered!");
         Logger.log("!-------------------!");
+
+        // Step 1: Get Active Window PID
+        int activePID = getActiveWindowPID();
+
+        if (activePID == -1) {
+            System.out.println("Failed to get active window PID.");
+            return;
+        }
+
+        // Step 2: List audio sessions and find the session matching the active PID
+        String audioSessionsJson = listAudioSessions();
+        if (audioSessionsJson == null) {
+            System.out.println("Failed to list audio sessions.");
+            return;
+        }
+
+        // Parse JSON and find app name for the matching PID (pseudo-code)
+        String appName = findAppNameByPID(audioSessionsJson, activePID);
+        if (appName == null) {
+            System.out.println("No audio session found for active window PID.");
+            return;
+        }
+
+        // Step 3: Toggle mute for the application
+        toggleMuteApplication(appName);
+
+    }
+
+    public static String findAppNameByPID(String json, int pid) {
+        // // Parse JSON and search for entry with matching PID, then return app name
+        // JsonElement jelement = new JsonParser().parse(json);
+        // JsonObject jObject = jelement.getAsJsonObject();
+        // JsonArray jArray = jObject.get("playback").getAsJsonArray();
+
+        // for (JsonElement e : jArray) {
+        // JsonObject app = e.getAsJsonObject();
+        // if (app.get("pid").getAsInt() == pid) {
+        // return app.get("name").getAsString();
+        // }
+        // }
+        return null;
     }
 
     // Method to read the contents of a file
@@ -371,9 +416,57 @@ public class SoundMuteApp {
         }
     }
 
-    // get keys from file with splitting with " + ", then while program is running
-    // check if every key is pressed, if it does, trigger the
-    // hotkey
+    // ------------------------------------------------- \
+    // --------------- MUTE TOGGLE ZONE ---------------- \
+    // ------------------------------------------------- \
+
+    // Getting current active window
+    public static int getActiveWindowPID() {
+        try {
+            String command = "powershell (Get-Process -Id (Get-Process | " +
+                    "Where-Object { .MainWindowHandle -eq (Get-Process -Id " +
+                    "[System.Diagnostics.Process]::GetCurrentProcess().Id).MainWindowHandle }).Id).Id";
+
+            Process process = new ProcessBuilder("cmd.exe", "/c", command).start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String pidString = reader.readLine();
+
+            return (pidString != null) ? Integer.parseInt(pidString.trim()) : -1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+
+    }
+
+    // Method to list all audio sessions
+    public static String listAudioSessions() {
+        try {
+            String svclPath = "svcl.exe";
+            String command = svclPath + " /sjson output.json"; // Exports data in JSON format
+
+            Process process = new ProcessBuilder("cmd.exe", "/c", command).start();
+            process.waitFor();
+
+            return new String(Files.readAllBytes(Paths.get("output.json")));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Method to mute/unmute an application
+    public static void toggleMuteApplication(String appName) {
+        try {
+            String svclPath = "svcl.exe";
+            String command = svclPath + " /MuteToggle \"" + appName + "\"";
+
+            ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/c", command);
+            processBuilder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     // Main body
     public static void main(String[] args) {
