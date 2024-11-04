@@ -2,6 +2,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "HotKeyListener",
+            "request": "launch",
+            "mainClass": "HotKeyListener",
+            "projectName": "app"
+        },
+        {
+            "type": "java",
+            "name": "GlobalKeyBoard",
+            "request": "launch",
+            "mainClass": "GlobalKeyBoard",
+            "projectName": "app"
+        },
+        {
+            "type": "java",
             "name": "SoundMuteApp",
             "request": "launch",
             "mainClass": "SoundMuteApp",

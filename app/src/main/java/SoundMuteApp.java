@@ -49,6 +49,7 @@ public class SoundMuteApp {
         int x = (screenSize.width - frame.getWidth()) / 2;
         int y = (screenSize.height - frame.getHeight()) / 2 - 100;
         frame.setLocation(x, y);
+
         // buttons: hotkey capture, trigger hotkey with delay, move program to tray,
         // clear hotkey
 
@@ -134,6 +135,7 @@ public class SoundMuteApp {
                             currentHotkeyLabel.setText("Current Hotkey: " + hotkey);
                             try {
                                 GlobalScreen.unregisterNativeHook();
+                                System.out.println("Unregistered native hook, please restart program");
                             } catch (NativeHookException ex) {
                                 Logger.log("Error unregistering native hook: " + ex);
                             }
@@ -377,6 +379,7 @@ public class SoundMuteApp {
     public static void main(String[] args) {
         try {
             GUIwindow();
+            HotKeyListener.main(null);
         } catch (NativeHookException e) {
             Logger.log("Error installing native hook: " + e.getMessage());
         }
