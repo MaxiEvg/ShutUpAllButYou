@@ -15,14 +15,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import java.awt.event.MouseAdapter;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Scanner;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -39,9 +35,9 @@ import org.jnativehook.GlobalScreen;
 public class SoundMuteApp {
     public static void GUIwindow() throws NativeHookException {
 
-        // ------------------------------------------------------------------ \\
-        // ---------------------------- GUI BODY ---------------------------- \\
-        // ------------------------------------------------------------------ \\
+        // ------------------------------------------------------------------ \
+        // ---------------------------- GUI BODY ---------------------------- \
+        // ------------------------------------------------------------------ \
 
         JFrame frame = new JFrame("Sound Mute App"); // Create new window with title "Sound Mute App"
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set default operation on close to exit the application
@@ -60,9 +56,9 @@ public class SoundMuteApp {
         // Create a panel with a BorderLayout
         JPanel borderPanel = new JPanel(new BorderLayout());
 
-        // ------------------------------------------------------------------ \\
-        // ---------------------------- FILE WORK --------------------------- \\
-        // ------------------------------------------------------------------ \\
+        // ------------------------------------------------------------------ \
+        // ---------------------------- FILE WORK --------------------------- \
+        // ------------------------------------------------------------------ \
 
         // Read the current hotkey from the file
         String currentHotkey = readFile("hotkey.inf");
@@ -89,9 +85,9 @@ public class SoundMuteApp {
         // Add the grid panel to the center of the border panel
         borderPanel.add(gridPanel, BorderLayout.CENTER);
 
-        // ------------------------------------------------------------------ \\
-        // ----------------------- BUTTON INTERACTIONS ---------------------- \\
-        // ------------------------------------------------------------------ \\
+        // ------------------------------------------------------------------ \
+        // ----------------------- BUTTON INTERACTIONS ---------------------- \
+        // ------------------------------------------------------------------ \
 
         // Create buttons
         JButton CaptureBTN = new JButton("Hotkey capture");
@@ -160,7 +156,7 @@ public class SoundMuteApp {
         });
 
         // Delay trigger button logic
-        JButton DelayHtkBTN = new JButton("Trigger hotkey with 5s delay");
+        JButton DelayHtkBTN = new JButton("Trigger hotkey with 2s delay");
         DelayHtkBTN.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Code for Delay button action
@@ -198,14 +194,14 @@ public class SoundMuteApp {
             }
         });
 
-        // Add a listener to the "Trigger hotkey with 5s delay" button
+        // Add a listener to the "Trigger hotkey with 2s delay" button
         DelayHtkBTN.addActionListener(e -> {
             // Code for Delay button action
             Logger.log("Delay button triggered!");
             Logger.log("!-------------------!");
-            // Trigger the hotkey with a 5-second delay
+            // Trigger the hotkey with a 2-second delay
             Timer timer = new Timer(1000, new ActionListener() {
-                int seconds = 5;
+                int seconds = 2;
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -215,14 +211,14 @@ public class SoundMuteApp {
                                 .invokeLater(() -> DelayHtkBTN.setText("Waiting " + seconds + "s"));
                     } else {
                         triggerHotkey();
-                        SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 5s delay"));
+                        SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 2s delay"));
                         ((Timer) e.getSource()).stop();
                     }
                 }
             });
             timer.setRepeats(true);
             timer.start();
-            SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 5s"));
+            SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 2s")); 
         });
 
         // Add buttons to the grid panel
@@ -238,9 +234,9 @@ public class SoundMuteApp {
         frame.add(borderPanel);
         frame.setVisible(true);
 
-        // ------------------------------------------------- \\
-        // ------------------- TRAY ZONE ------------------- \\
-        // ------------------------------------------------- \\
+        // ------------------------------------------------- \
+        // ------------------- TRAY ZONE ------------------- \
+        // ------------------------------------------------- \
 
         // Create a system tray
         SystemTray tray = SystemTray.getSystemTray();
@@ -280,9 +276,9 @@ public class SoundMuteApp {
                     Logger.log("Delay button triggered with mouse wheel button from tray!");
                     Logger.log("!-------------------!");
 
-                    // Trigger the hotkey with a 5-second delay
+                    // Trigger the hotkey with a 2-second delay
                     Timer timer = new Timer(1000, new ActionListener() {
-                        int seconds = 5;
+                        int seconds = 2;
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
@@ -299,7 +295,7 @@ public class SoundMuteApp {
                     });
                     timer.setRepeats(true);
                     timer.start();
-                    SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 5s"));
+                    SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 2s"));
                 }
             }
         });
@@ -327,46 +323,8 @@ public class SoundMuteApp {
         Logger.log("Hotkey triggered!");
         Logger.log("!-------------------!");
 
-        // Step 1: Get Active Window PID
-        int activePID = getActiveWindowPID();
+        SoundController.triggerHotkey();
 
-        if (activePID == -1) {
-            System.out.println("Failed to get active window PID.");
-            return;
-        }
-
-        // Step 2: List audio sessions and find the session matching the active PID
-        String audioSessionsJson = listAudioSessions();
-        if (audioSessionsJson == null) {
-            System.out.println("Failed to list audio sessions.");
-            return;
-        }
-
-        // Parse JSON and find app name for the matching PID (pseudo-code)
-        String appName = findAppNameByPID(audioSessionsJson, activePID);
-        if (appName == null) {
-            System.out.println("No audio session found for active window PID.");
-            return;
-        }
-
-        // Step 3: Toggle mute for the application
-        toggleMuteApplication(appName);
-
-    }
-
-    public static String findAppNameByPID(String json, int pid) {
-        // // Parse JSON and search for entry with matching PID, then return app name
-        // JsonElement jelement = new JsonParser().parse(json);
-        // JsonObject jObject = jelement.getAsJsonObject();
-        // JsonArray jArray = jObject.get("playback").getAsJsonArray();
-
-        // for (JsonElement e : jArray) {
-        // JsonObject app = e.getAsJsonObject();
-        // if (app.get("pid").getAsInt() == pid) {
-        // return app.get("name").getAsString();
-        // }
-        // }
-        return null;
     }
 
     // Method to read the contents of a file
@@ -387,14 +345,14 @@ public class SoundMuteApp {
                 scanner.close();
                 return contents;
             } else {
-                Logger.log("!------WARN-------!");
+                Logger.log("!------WARN------!");
                 Logger.log("!!!FOUND FILE, BUT IT SEEMS EMPTY!!!");
                 Logger.log("Overwriten hotkey.inf with defalut of 'Ctrl + Back Slash' ");
                 Logger.log("!-------------!");
                 scanner.close();
                 return "";
             }
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) { 
             Logger.log("Error: " + e.getMessage());
             Logger.log("!-------------------!");
         } catch (NullPointerException e) {
@@ -415,63 +373,10 @@ public class SoundMuteApp {
             Logger.log("!-------------------!");
         }
     }
-
-    // ------------------------------------------------- \
-    // --------------- MUTE TOGGLE ZONE ---------------- \
-    // ------------------------------------------------- \
-
-    // Getting current active window
-    public static int getActiveWindowPID() {
-        try {
-            String command = "powershell (Get-Process -Id (Get-Process | " +
-                    "Where-Object { .MainWindowHandle -eq (Get-Process -Id " +
-                    "[System.Diagnostics.Process]::GetCurrentProcess().Id).MainWindowHandle }).Id).Id";
-
-            Process process = new ProcessBuilder("cmd.exe", "/c", command).start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String pidString = reader.readLine();
-
-            return (pidString != null) ? Integer.parseInt(pidString.trim()) : -1;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
-        }
-
-    }
-
-    // Method to list all audio sessions
-    public static String listAudioSessions() {
-        try {
-            String svclPath = "svcl.exe";
-            String command = svclPath + " /sjson output.json"; // Exports data in JSON format
-
-            Process process = new ProcessBuilder("cmd.exe", "/c", command).start();
-            process.waitFor();
-
-            return new String(Files.readAllBytes(Paths.get("output.json")));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Method to mute/unmute an application
-    public static void toggleMuteApplication(String appName) {
-        try {
-            String svclPath = "svcl.exe";
-            String command = svclPath + " /MuteToggle \"" + appName + "\"";
-
-            ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/c", command);
-            processBuilder.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     // Main body
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try {
-            GUIwindow();
+            GUIwindow(); 
             HotKeyListener.main(null);
         } catch (NativeHookException e) {
             Logger.log("Error installing native hook: " + e.getMessage());

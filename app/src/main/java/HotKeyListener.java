@@ -41,6 +41,7 @@ public class HotKeyListener implements NativeKeyListener {
         }
     }
 
+    @SuppressWarnings("resource")
     public static void checkHotkey() {
         try {
             File file = new File("hotkey.inf");
@@ -68,8 +69,7 @@ public class HotKeyListener implements NativeKeyListener {
     }
 
     @Override
-    public void nativeKeyTyped(NativeKeyEvent nativeEvent) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'nativeKeyTyped'");
+    public void nativeKeyTyped(NativeKeyEvent e) {
+        // Ignore key typed events as we only care about key presses
     }
 }
