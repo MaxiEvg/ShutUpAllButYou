@@ -5,6 +5,7 @@ import org.jnativehook.keyboard.NativeKeyListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -37,12 +38,16 @@ public class HotKeyListener implements NativeKeyListener {
             secondKey = NativeKeyEvent.getKeyText(e.getKeyCode());
             // log hotkey
             Logger.log(firstKey + " + " + secondKey);
-            checkHotkey();
+            try {
+                checkHotkey();
+            } catch (InterruptedException | IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 
     @SuppressWarnings("resource")
-    public static void checkHotkey() {
+    public static void checkHotkey() throws InterruptedException, IOException {
         try {
             File file = new File("hotkey.inf");
             Scanner scanner = new Scanner(file);

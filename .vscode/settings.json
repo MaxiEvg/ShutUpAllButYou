@@ -1,6 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.compile.nullAnalysis.mode": "automatic",
-    "Codegeex.Chat.fontSize": 14,
-    "Codegeex.Chat.LanguagePreference": "English"
+    "java.debug.settings.onBuildFailureProceed": true
 }

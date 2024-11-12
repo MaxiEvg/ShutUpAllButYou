@@ -210,7 +210,13 @@ public class SoundMuteApp {
                         SwingUtilities
                                 .invokeLater(() -> DelayHtkBTN.setText("Waiting " + seconds + "s"));
                     } else {
-                        triggerHotkey();
+                        try {
+                            triggerHotkey();
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        } catch (IOException e1) {
+                                                    e1.printStackTrace();
+                                                }
                         SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 2s delay"));
                         ((Timer) e.getSource()).stop();
                     }
@@ -287,7 +293,11 @@ public class SoundMuteApp {
                                 SwingUtilities
                                         .invokeLater(() -> DelayHtkBTN.setText("Waiting " + seconds + "s"));
                             } else {
-                                triggerHotkey();
+                                try {
+                                    triggerHotkey();
+                                } catch (InterruptedException | IOException e1) {
+                                    e1.printStackTrace();
+                                }
                                 SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 5s delay"));
                                 ((Timer) e.getSource()).stop();
                             }
@@ -318,7 +328,7 @@ public class SoundMuteApp {
     }
 
     // Method to trigger the hotkey
-    public static void triggerHotkey() {
+    public static void triggerHotkey() throws InterruptedException, IOException {
         // Code to trigger the hotkey
         Logger.log("Hotkey triggered!");
         Logger.log("!-------------------!");
