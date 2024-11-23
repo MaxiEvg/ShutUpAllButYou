@@ -36,8 +36,8 @@ public class HotKeyListener implements NativeKeyListener {
     public void nativeKeyReleased(NativeKeyEvent e) {
         if (firstKey != null) {
             secondKey = NativeKeyEvent.getKeyText(e.getKeyCode());
-            // log hotkey
-            Logger.log(firstKey + " + " + secondKey);
+            // Debug: log hotkey
+            // Logger.log(firstKey + " + " + secondKey);
             try {
                 checkHotkey();
             } catch (InterruptedException | IOException e1) {

@@ -44,6 +44,7 @@ public class SoundController {
         }
     }
 
+    @SuppressWarnings("null")
     private static String getActiveWindowPID() {
         String pid = null;
         try {
@@ -110,6 +111,7 @@ public class SoundController {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void muteAllExcept(String activeProcessId) throws IOException {
         ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/scomma", "");
         Process process = pb.start(); // Start the process to retrieve the list
@@ -138,31 +140,41 @@ public class SoundController {
         // Parse the output to mute all processes except the active window PID
         try (BufferedReader reader = new BufferedReader(new FileReader("sound_instances_to_a_comma_list.txt"))) {
             String currentMicrophone = null;
+            if (currentMicrophone != null) {
+                new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
+            }
             String line;
-            while ((line = reader.readLine()) != null) {
-                if (line != null) { // Add a null check here
-                    if (line.contains("rundll32.exe")) {
-                        try {
-                            currentMicrophone = line.split(",")[0];
-                            System.out.println("Found current microphone: " + currentMicrophone);
-                        } catch (Exception e) {
-                            System.out.println("Something wrong just happened getting microphone");
-                        }
+            while (((line = reader.readLine()) != null) && !(line.contains("Name, Type, Direction"))) {
+                if (line.contains(
+                        "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Capture")) {
+                    try {
+                        currentMicrophone = line.split(",")[0];
+                        System.out.println("Found current microphone: " + currentMicrophone);
+                    } catch (Exception e) {
+                        System.out.println("Something wrong just happened getting microphone");
+                    }
 
-                    } else if (line.contains(".exe")) {
-                        String[] columns = line.split(",");
-                        if (columns.length > 20) {
-                            String processId = columns[21];
-                            // Get and store the original volume before muting
-                            int originalVolume = getProcessVolume(processId);
-                            originalVolumes.put(processId, originalVolume);
+                }
+                if (line.contains(".exe")) {
+                    String[] columns = line.split(",");
+                    if (columns.length >= 1 && !columns[20].equals(currentMicrophone)
+                            && !columns[20].equals(activeProcessId)) {
+                        String processId = columns[20];
+                        // Get and store the original volume before muting
+                        int originalVolume = getProcessVolume(processId);
+                        originalVolumes.put(processId, originalVolume);
+                        if (line.contains("steam.exe")) {
+                            System.out.println("Got Steam process, unmuting mic just in case. PID: " + processId);
+                            new ProcessBuilder("svcl.exe", "/Mute", processId).start();
+                            new ProcessBuilder("svcl.exe", "/Unmute", currentMicrophone).start();
+                        } else {
                             // Mute the process
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
-                        } else {
-                            System.out.println("Unmuting current app's process ID: " + activeProcessId);
-                            // Unmute the current app's process ID
-                            new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
                         }
+                    } else {
+                        System.out.println("Unmuting current app's process ID: " + activeProcessId);
+                        // Unmute the current app's process ID
+                        new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
                     }
                 }
             }
@@ -182,7 +194,8 @@ public class SoundController {
             }
         } catch (NumberFormatException e) {
             e.printStackTrace();
-            System.out.println("Error parsing volume level for process ID: " + processId);
+            System.out.println("Error parsing volume level for process ID: " +
+                    processId);
             try (PrintWriter out = new PrintWriter(new FileWriter("error.log", true))) {
                 out.println("Error parsing volume level for process ID: " + processId);
                 out.flush();
