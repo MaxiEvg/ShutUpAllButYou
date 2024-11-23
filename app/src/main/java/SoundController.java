@@ -60,7 +60,6 @@ public class SoundController {
                     System.out.println("Found PID: " + pid.trim());
                 }
             }
-
             process.waitFor();
             if (process.exitValue() != 0) {
                 System.out.println("Error: PowerShell command execution failed.");
@@ -72,8 +71,9 @@ public class SoundController {
             Thread.currentThread().interrupt(); // Restore interrupted status
             System.out.println("Thread was interrupted, failed to complete operation");
         }
-        Logger.log(pid != null ? pid.trim() : null + " - return of getActiveWindowPID");
+        System.out.println("Return of getActiveWindowPID:" + pid != null ? pid.trim() : null);
         return pid != null ? pid.trim() : null;
+
     }
 
     private static String CurrentIDtoPName() throws IOException {
@@ -84,7 +84,7 @@ public class SoundController {
             return "err acurrid";
         }
 
-        String command = "powershell -command \"(Get-Process | Where-Object { $_.Id -eq " + currid + " }).Name\"";
+        String command = "Get-Process -Id " + currid + " | Select-Object -ExpandProperty Path";
 
         ProcessBuilder processBuilder = new ProcessBuilder("powershell", "-command", command);
         processBuilder.redirectErrorStream(true);
@@ -102,7 +102,8 @@ public class SoundController {
             reader.close();
             process.waitFor();
 
-            return output.toString().trim();
+            Logger.log("Converted PID:" + currid + " to name: " + output);
+            return output.toString();
         } catch (IOException | InterruptedException e) {
             System.out.println("Error: " + e.getMessage());
             return "err process";
@@ -113,17 +114,17 @@ public class SoundController {
         ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/scomma", "");
         Process process = pb.start(); // Start the process to retrieve the list
 
-        // extract the process list and write it to a file
+        // Extract the process list and write it to a file
         System.out.println("Muting all applications except the active application...");
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
-            StringBuilder sb = new StringBuilder();
+            StringBuilder strbl = new StringBuilder();
             while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
+                strbl.append(line).append("\n");
             }
 
-            String processList = sb.toString();
+            String processList = strbl.toString();
             try (BufferedWriter writer = new BufferedWriter(new FileWriter("sound_instances_to_a_comma_list.txt"))) {
                 writer.write(processList);
             }
@@ -139,26 +140,28 @@ public class SoundController {
             String currentMicrophone = null;
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.contains("BM800")) {
-                    currentMicrophone = line.split(",")[0];
-                    System.out.println("Found current microphone: " + currentMicrophone);
-                } else if (line.contains(".exe")) {
-                    String[] columns = line.split(",");
-                    if (columns.length > 20) {
-                        String processId = columns[20];
-                        // Mute all processes except the active window PID and the current microphone
-                        if (!processId.equals(activeProcessId)) {
-                            System.out.println("Muting process ID: " + processId);
+                if (line != null) { // Add a null check here
+                    if (line.contains("rundll32.exe")) {
+                        try {
+                            currentMicrophone = line.split(",")[0];
+                            System.out.println("Found current microphone: " + currentMicrophone);
+                        } catch (Exception e) {
+                            System.out.println("Something wrong just happened getting microphone");
+                        }
+
+                    } else if (line.contains(".exe")) {
+                        String[] columns = line.split(",");
+                        if (columns.length > 20) {
+                            String processId = columns[21];
                             // Get and store the original volume before muting
                             int originalVolume = getProcessVolume(processId);
                             originalVolumes.put(processId, originalVolume);
                             // Mute the process
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
                         } else {
-                            System.out.println("Unmuting current app's process ID: " + processId);
+                            System.out.println("Unmuting current app's process ID: " + activeProcessId);
                             // Unmute the current app's process ID
-                            new ProcessBuilder("svcl.exe", "/Unmute", processId).start();
-
+                            new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
                         }
                     }
                 }
@@ -188,15 +191,20 @@ public class SoundController {
         return 100; // Default volume if retrieval fails
     }
 
-    private static void restoreVolumes() throws IOException {
-        // Restore each process volume to its original state
-        for (Map.Entry<String, Integer> entry : originalVolumes.entrySet()) {
-            String processId = entry.getKey();
-            int originalVolume = entry.getValue();
-            // Restore the volume level to the original
-            new ProcessBuilder("svcl.exe", "/SetVolume", processId, String.valueOf(originalVolume)).start();
-            new ProcessBuilder("svcl.exe", "/Unmute", processId).start();
+    private static void restoreVolumes() {
+        try {
+
+            // Restore each process volume to its original state
+            for (Map.Entry<String, Integer> entry : originalVolumes.entrySet()) {
+                String processId = entry.getKey();
+                int originalVolume = entry.getValue();
+                // Restore the volume level to the original
+                new ProcessBuilder("svcl.exe", "/SetVolume", processId, String.valueOf(originalVolume)).start();
+                new ProcessBuilder("svcl.exe", "/Unmute", processId).start();
+            }
+            originalVolumes.clear(); // Clear stored volumes for the next mute cycle
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        originalVolumes.clear(); // Clear stored volumes for the next mute cycle
     }
 }
