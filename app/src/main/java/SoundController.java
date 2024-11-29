@@ -114,7 +114,7 @@ public class SoundController {
     @SuppressWarnings("unused")
     private static void muteAllExcept(String activeProcessId) throws IOException {
         ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/scomma", "");
-        Process process = pb.start(); // Start the process to retrieve the list
+        Process process = pb.start();
 
         // Extract the process list and write it to a file
         System.out.println("Muting all applications except the active application...");
@@ -137,11 +137,12 @@ public class SoundController {
             return;
         }
 
-        // Parse the output to mute all processes except the active window PID
+        // Real work here
         try (BufferedReader reader = new BufferedReader(new FileReader("sound_instances_to_a_comma_list.txt"))) {
             String currentMicrophone = null;
             if (currentMicrophone != null) {
                 new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
+                System.out.println("Couldn't find your mic");
             }
             String line;
             while (((line = reader.readLine()) != null) && !(line.contains("Name, Type, Direction"))) {
@@ -150,10 +151,10 @@ public class SoundController {
                     try {
                         currentMicrophone = line.split(",")[0];
                         System.out.println("Found current microphone: " + currentMicrophone);
+                        new ProcessBuilder("svcl.exe", "/Unmute", currentMicrophone).start();
                     } catch (Exception e) {
-                        System.out.println("Something wrong just happened getting microphone");
+                        System.out.println("Something wrong just happened getting microphone" + e.getMessage());
                     }
-
                 }
                 if (line.contains(".exe")) {
                     String[] columns = line.split(",");
@@ -161,52 +162,75 @@ public class SoundController {
                             && !columns[20].equals(activeProcessId)) {
                         String processId = columns[20];
                         // Get and store the original volume before muting
-                        int originalVolume = getProcessVolume(processId);
+                        Integer originalVolume;
+                        originalVolume = getProcessVolume(processId);
+
                         originalVolumes.put(processId, originalVolume);
-                        if (line.contains("steam.exe")) {
-                            System.out.println("Got Steam process, unmuting mic just in case. PID: " + processId);
+
+                        if (line.contains("steam") || line.contains("Discord") || line.contains("telegram")) {
+                            System.out.println(
+                                    "Got Steam or Discord or Telegram process, unmuting mic just in case. PID: "
+                                            + processId);
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
-                            new ProcessBuilder("svcl.exe", "/Unmute", currentMicrophone).start();
+                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
                         } else {
                             // Mute the process
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
+                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
                         }
+                        if (line.contains("rundll32.exe")) {
+                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                        }
+
                     } else {
                         System.out.println("Unmuting current app's process ID: " + activeProcessId);
                         // Unmute the current app's process ID
-                        new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
+                        new ProcessBuilder("svcl.exe", "/UnMute", activeProcessId).start();
+                        new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
                     }
+                    try {
+                        // Logger.log("muting" + line);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+
                 }
             }
         }
     }
 
-    private static int getProcessVolume(String processId) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/GetVolume", processId);
+    private static Integer getProcessVolume(String processId) throws IOException {
+        ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/Stdout", "/GetPercent", processId);
         Process process = pb.start();
-
+        // Debug: System.out.println("Retrieving volume level for process ID: " +
+        // processId);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String volumeStr = reader.readLine();
             if (volumeStr != null) {
-                int volume = Integer.parseInt(volumeStr.trim());
-                System.out.println("Retrieved volume level for process ID: " + processId + " = " + volume);
-                return volume;
-            }
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            System.out.println("Error parsing volume level for process ID: " +
-                    processId);
-            try (PrintWriter out = new PrintWriter(new FileWriter("error.log", true))) {
-                out.println("Error parsing volume level for process ID: " + processId);
-                out.flush();
+                try {
+                    float volumeFloat = Float.parseFloat(volumeStr.trim());
+                    if (volumeFloat >= 99.5) {
+                        int volume = 100;
+                        return volume;
+                    } else {
+                        int volume = Math.round(volumeFloat);
+                        System.out.println("Retrieved volume level for process ID: " + processId + "= " + volume);
+                        return volume;
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Error parsing volume level");
+                    try (PrintWriter out = new PrintWriter(new FileWriter("error.log", true))) {
+                        out.println("Error parsing volume level for process ID: " + processId + "\n " + e.getMessage());
+                        out.flush();
+                    }
+                }
             }
         }
-        return 100; // Default volume if retrieval fails
+        return null;
     }
 
     private static void restoreVolumes() {
         try {
-
             // Restore each process volume to its original state
             for (Map.Entry<String, Integer> entry : originalVolumes.entrySet()) {
                 String processId = entry.getKey();
