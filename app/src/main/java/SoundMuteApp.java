@@ -39,10 +39,11 @@ public class SoundMuteApp {
         // ---------------------------- GUI BODY ---------------------------- \
         // ------------------------------------------------------------------ \
 
-        JFrame frame = new JFrame("Sound Mute App"); // Create new window with title "Sound Mute App"
+        JFrame frame = new JFrame("SUABY App"); // Create new window with title "Sound Mute App"
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Set default operation on close to exit the application
-        frame.setSize(450, 150); // Setting standart window sise
+        frame.setSize(450, 140); // Setting standart window sise
         frame.setMinimumSize(new Dimension(450, 120)); // Set minimum size
+
         frame.setVisible(true); // Set visibility
         // Center the window on the screen
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -65,7 +66,7 @@ public class SoundMuteApp {
 
         // If file is not found, create a new file and set default hotkey
         if (currentHotkey.isBlank()) {
-            currentHotkey = "Ctrl + Back Slash";
+            currentHotkey = "Ctrl + Left";
             writeFile("hotkey.inf", currentHotkey);
         }
 
@@ -92,6 +93,7 @@ public class SoundMuteApp {
         // Create buttons
         JButton CaptureBTN = new JButton("Hotkey capture");
         CaptureBTN.addActionListener(new ActionListener() {
+
             public void actionPerformed(ActionEvent e) {
                 // Code for Capture button action
                 Logger.log("Capture button clicked!");
@@ -101,7 +103,7 @@ public class SoundMuteApp {
                 // update label, hotkey should be key1 + key2
 
                 // start timer to record hotkey
-                Timer timer = new Timer(2400, e1 -> {
+                Timer timer = new Timer(1700, e1 -> {
                     // stop native hook
                     try {
                         GlobalScreen.unregisterNativeHook();
@@ -115,6 +117,7 @@ public class SoundMuteApp {
                 // start native hook to record hotkey
                 try {
                     GlobalScreen.registerNativeHook();
+                    Logger.log("waiting for new input\n");
                 } catch (NativeHookException ex) {
                     Logger.log("Error registering native hook: " + ex);
                 }
@@ -135,6 +138,7 @@ public class SoundMuteApp {
                             currentHotkeyLabel.setText("Current Hotkey: " + hotkey);
                             try {
                                 GlobalScreen.unregisterNativeHook();
+                                currentHotkeyLabel.setText("Unregistered native hook, please restart program");
                                 System.out.println("Unregistered native hook, please restart program");
                             } catch (NativeHookException ex) {
                                 Logger.log("Error unregistering native hook: " + ex);
@@ -215,8 +219,8 @@ public class SoundMuteApp {
                         } catch (InterruptedException e1) {
                             e1.printStackTrace();
                         } catch (IOException e1) {
-                                                    e1.printStackTrace();
-                                                }
+                            e1.printStackTrace();
+                        }
                         SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 2s delay"));
                         ((Timer) e.getSource()).stop();
                     }
@@ -224,7 +228,7 @@ public class SoundMuteApp {
             });
             timer.setRepeats(true);
             timer.start();
-            SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 2s")); 
+            SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Waiting 2s"));
         });
 
         // Add buttons to the grid panel
@@ -362,7 +366,7 @@ public class SoundMuteApp {
                 scanner.close();
                 return "";
             }
-        } catch (FileNotFoundException e) { 
+        } catch (FileNotFoundException e) {
             Logger.log("Error: " + e.getMessage());
             Logger.log("!-------------------!");
         } catch (NullPointerException e) {
@@ -383,10 +387,11 @@ public class SoundMuteApp {
             Logger.log("!-------------------!");
         }
     }
+
     // Main body
     public static void main(String[] args) throws IOException {
         try {
-            GUIwindow(); 
+            GUIwindow();
             HotKeyListener.main(null);
         } catch (NativeHookException e) {
             Logger.log("Error installing native hook: " + e.getMessage());

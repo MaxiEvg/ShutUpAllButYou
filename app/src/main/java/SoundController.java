@@ -62,7 +62,7 @@ public class SoundController {
                 }
             }
             process.waitFor();
-            if (process.exitValue() != 0) {
+            if (process.waitFor() != 0) {
                 System.out.println("Error: PowerShell command execution failed.");
                 return null;
             }
@@ -111,8 +111,11 @@ public class SoundController {
         }
     }
 
-    @SuppressWarnings("unused")
     private static void muteAllExcept(String activeProcessId) throws IOException {
+        if (activeProcessId == null || activeProcessId.isEmpty()) {
+            throw new IllegalArgumentException("activeProcessId cannot be null or empty");
+        }
+
         ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/scomma", "");
         Process process = pb.start();
 
@@ -138,20 +141,21 @@ public class SoundController {
         }
 
         // Real work here
+        String currentMicrophone = null;
         try (BufferedReader reader = new BufferedReader(new FileReader("sound_instances_to_a_comma_list.txt"))) {
-            String currentMicrophone = null;
-            if (currentMicrophone != null) {
-                new ProcessBuilder("svcl.exe", "/Unmute", activeProcessId).start();
-                System.out.println("Couldn't find your mic");
-            }
             String line;
             while (((line = reader.readLine()) != null) && !(line.contains("Name, Type, Direction"))) {
                 if (line.contains(
-                        "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Capture")) {
+                        "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Capture\\")) {
                     try {
                         currentMicrophone = line.split(",")[0];
                         System.out.println("Found current microphone: " + currentMicrophone);
                         new ProcessBuilder("svcl.exe", "/Unmute", currentMicrophone).start();
+
+                        if (currentMicrophone == null) {
+                            System.out.println("Couldn't find your mic");
+                        }
+
                     } catch (Exception e) {
                         System.out.println("Something wrong just happened getting microphone" + e.getMessage());
                     }
@@ -178,7 +182,8 @@ public class SoundController {
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
                             new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
                         }
-                        if (line.contains("rundll32.exe")) {
+                        if (line.contains(
+                                "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Capture")) {
                             new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
                         }
 
@@ -214,7 +219,8 @@ public class SoundController {
                         return volume;
                     } else {
                         int volume = Math.round(volumeFloat);
-                        System.out.println("Retrieved volume level for process ID: " + processId + "= " + volume);
+                        // System.out.println("Retrieved volume level for process ID: " + processId + "=
+                        // " + volume);
                         return volume;
                     }
                 } catch (NumberFormatException e) {
