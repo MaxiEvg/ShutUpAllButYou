@@ -1,7 +1,7 @@
-import org.jnativehook.GlobalScreen;
-import org.jnativehook.NativeHookException;
-import org.jnativehook.keyboard.NativeKeyEvent;
-import org.jnativehook.keyboard.NativeKeyListener;
+import com.github.kwhat.jnativehook.GlobalScreen;
+import com.github.kwhat.jnativehook.NativeHookException;
+import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
+import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,18 +53,19 @@ public class HotKeyListener implements NativeKeyListener {
         }
     }
 
-    @SuppressWarnings("resource")
     public static void checkHotkey() throws InterruptedException, IOException {
-        try {
-            File file = new File("hotkey.inf");
-            Scanner scanner = new Scanner(file);
-            String line = scanner.nextLine();
-            String[] hotkeys = line.split(" \\+ ");
-            String expectedFirstKey = hotkeys[0];
-            String expectedSecondKey = hotkeys[1];
+        try (Scanner scanner = new Scanner(new File("hotkey.inf"))) {
+            if (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] hotkeys = line.split(" \\+ ");
+                if (hotkeys.length >= 2) {
+                    String expectedFirstKey = hotkeys[0];
+                    String expectedSecondKey = hotkeys[1];
 
-            if (firstKey.equals(expectedFirstKey) && secondKey.equals(expectedSecondKey)) {
-                SoundMuteApp.triggerHotkey();
+                    if (firstKey.equals(expectedFirstKey) && secondKey.equals(expectedSecondKey)) {
+                        SoundMuteApp.triggerHotkey();
+                    }
+                }
             }
         } catch (FileNotFoundException e) {
             System.err.println("Error reading hotkey file: " + e.getMessage());

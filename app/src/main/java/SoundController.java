@@ -44,7 +44,6 @@ public class SoundController {
         }
     }
 
-    @SuppressWarnings("null")
     private static String getActiveWindowPID() {
         String pid = null;
         try {
@@ -74,7 +73,6 @@ public class SoundController {
         }
         System.out.println("Return of getActiveWindowPID:" + pid != null ? pid.trim() : null);
         return pid != null ? pid.trim() : null;
-
     }
 
     private static String CurrentIDtoPName() throws IOException {
@@ -153,11 +151,11 @@ public class SoundController {
                         new ProcessBuilder("svcl.exe", "/Unmute", currentMicrophone).start();
 
                         if (currentMicrophone == null) {
-                            System.out.println("Couldn't find your mic");
+                            System.out.println("Couldn't find your microphone");
                         }
 
                     } catch (Exception e) {
-                        System.out.println("Something wrong just happened getting microphone" + e.getMessage());
+                        System.out.println("Error occurred while getting microphone: " + e.getMessage());
                     }
                 }
                 if (line.contains(".exe")) {
@@ -166,39 +164,44 @@ public class SoundController {
                             && !columns[20].equals(activeProcessId)) {
                         String processId = columns[20];
                         // Get and store the original volume before muting
-                        Integer originalVolume;
-                        originalVolume = getProcessVolume(processId);
+                        Integer originalVolume = getProcessVolume(processId);
 
-                        originalVolumes.put(processId, originalVolume);
+                        if (originalVolume != null) {
+                            originalVolumes.put(processId, originalVolume);
+                        } else {
+                            // If volume couldn't be retrieved, use default value
+                            originalVolumes.put(processId, 100);
+                        }
 
                         if (line.contains("steam") || line.contains("Discord") || line.contains("telegram")) {
                             System.out.println(
                                     "Got Steam or Discord or Telegram process, unmuting mic just in case. PID: "
                                             + processId);
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
-                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            if (currentMicrophone != null) {
+                                new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            }
                         } else {
                             // Mute the process
                             new ProcessBuilder("svcl.exe", "/Mute", processId).start();
-                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            if (currentMicrophone != null) {
+                                new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            }
                         }
                         if (line.contains(
                                 "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Capture")) {
-                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            if (currentMicrophone != null) {
+                                new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                            }
                         }
-
                     } else {
                         System.out.println("Unmuting current app's process ID: " + activeProcessId);
                         // Unmute the current app's process ID
                         new ProcessBuilder("svcl.exe", "/UnMute", activeProcessId).start();
-                        new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                        if (currentMicrophone != null) {
+                            new ProcessBuilder("svcl.exe", "/UnMute", currentMicrophone).start();
+                        }
                     }
-                    try {
-                        // Logger.log("muting" + line);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
-
                 }
             }
         }
@@ -207,8 +210,6 @@ public class SoundController {
     private static Integer getProcessVolume(String processId) throws IOException {
         ProcessBuilder pb = new ProcessBuilder("svcl.exe", "/Stdout", "/GetPercent", processId);
         Process process = pb.start();
-        // Debug: System.out.println("Retrieving volume level for process ID: " +
-        // processId);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String volumeStr = reader.readLine();
             if (volumeStr != null) {
@@ -219,8 +220,6 @@ public class SoundController {
                         return volume;
                     } else {
                         int volume = Math.round(volumeFloat);
-                        // System.out.println("Retrieved volume level for process ID: " + processId + "=
-                        // " + volume);
                         return volume;
                     }
                 } catch (NumberFormatException e) {

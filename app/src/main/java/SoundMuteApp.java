@@ -28,10 +28,10 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import org.jnativehook.NativeHookException;
-import org.jnativehook.keyboard.NativeKeyEvent;
-import org.jnativehook.keyboard.NativeKeyListener;
-import org.jnativehook.GlobalScreen;
+import com.github.kwhat.jnativehook.GlobalScreen;
+import com.github.kwhat.jnativehook.NativeHookException;
+import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
+import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 
 public class SoundMuteApp {
     public static void GUIwindow() throws NativeHookException {
@@ -253,7 +253,8 @@ public class SoundMuteApp {
         SystemTray tray = SystemTray.getSystemTray();
 
         // Create a tray icon
-        Image image = Toolkit.getDefaultToolkit().getImage("SUABY.png");
+        String iconPath = System.getProperty("user.dir") + File.separator + "SUABY.png";
+        Image image = Toolkit.getDefaultToolkit().getImage(iconPath);
         TrayIcon trayIcon = new TrayIcon(image, "Sound Mute App");
 
         // Create a popup menu for the tray icon
@@ -272,12 +273,12 @@ public class SoundMuteApp {
         popup.add(showItem);
         popup.add(exitItem);
         trayIcon.setPopupMenu(popup);
-        MenuItem aboutItem = new MenuItem("О программе");
+        MenuItem aboutItem = new MenuItem("About");
         aboutItem.addActionListener(e -> {
             JOptionPane.showMessageDialog(null,
                     "SUABY v1.1.1.2\n" +
-                            "Утилита для управления звуком активного приложения\n",
-                    "О программе", JOptionPane.INFORMATION_MESSAGE);
+                            "Utility for controlling active application sound\n",
+                    "About", JOptionPane.INFORMATION_MESSAGE);
         });
         popup.add(aboutItem);
 
@@ -311,7 +312,7 @@ public class SoundMuteApp {
                                 } catch (InterruptedException | IOException e1) {
                                     e1.printStackTrace();
                                 }
-                                SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 5s delay"));
+                                SwingUtilities.invokeLater(() -> DelayHtkBTN.setText("Trigger hotkey with 2s delay"));
                                 ((Timer) e.getSource()).stop();
                             }
                         }
@@ -387,18 +388,56 @@ public class SoundMuteApp {
 
     // write file method
     public static void writeFile(String filename, String contents) {
-        try {
-            FileWriter writer = new FileWriter(filename);
+        try (FileWriter writer = new FileWriter(filename)) {
             writer.write(contents);
-            writer.close();
         } catch (IOException e) {
             Logger.log("Error writing to file!");
             Logger.log("!-------------------!");
         }
     }
 
+    private static boolean checkDependencies() {
+        StringBuilder missingDeps = new StringBuilder();
+        boolean hasAllDeps = true;
+
+        // Check svcl.exe
+        if (!new File("svcl.exe").exists()) {
+            missingDeps.append("- svcl.exe (https://www.nirsoft.net/utils/sound_volume_command_line.html)\n");
+            hasAllDeps = false;
+        }
+
+        // Check nircmd.exe
+        if (!new File("nircmd.exe").exists()) {
+            missingDeps.append("- nircmd.exe (https://www.nirsoft.net/utils/nircmd.html)\n");
+            hasAllDeps = false;
+        }
+
+        // Check icon
+        if (!new File("SUABY.png").exists()) {
+            missingDeps.append("- SUABY.png (application icon)\n");
+            hasAllDeps = false;
+        }
+
+        if (!hasAllDeps) {
+            JOptionPane.showMessageDialog(null,
+                    "Missing required files:\n\n" + missingDeps.toString() +
+                            "\nPlease download and install all dependencies to directory:\n" +
+                            System.getProperty("user.dir"),
+                    "Dependencies Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
+        return hasAllDeps;
+    }
+
     // Main body
     public static void main(String[] args) throws IOException {
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+
+        if (!checkDependencies()) {
+            System.exit(1);
+        }
+
         try {
             GUIwindow();
             HotKeyListener.main(null);
