@@ -23,6 +23,7 @@ import java.util.Scanner;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -271,6 +272,14 @@ public class SoundMuteApp {
         popup.add(showItem);
         popup.add(exitItem);
         trayIcon.setPopupMenu(popup);
+        MenuItem aboutItem = new MenuItem("О программе");
+        aboutItem.addActionListener(e -> {
+            JOptionPane.showMessageDialog(null,
+                    "SUABY v1.1.1.2\n" +
+                            "Утилита для управления звуком активного приложения\n",
+                    "О программе", JOptionPane.INFORMATION_MESSAGE);
+        });
+        popup.add(aboutItem);
 
         // Add a listener to handle left-double-click and right-single-click events
         trayIcon.addMouseListener(new MouseAdapter() {
@@ -346,7 +355,7 @@ public class SoundMuteApp {
         try {
             File file = new File(filename);
             if (!file.exists()) {
-                Logger.log("File not found! Created new hotkey.inf with defalut of c'Ctrl + Back Slash'");
+                Logger.log("File not found! Created new hotkey.inf with defalut of 'Ctrl + Back Slash'");
                 Logger.log("!-------------------!");
                 return "";
             }
